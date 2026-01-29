@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incentive Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 28px;
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: #fff;
+        }
+
+        .input-group input:disabled {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+
+        .ratio-mix-group {
+            margin-top: 20px;
+        }
+
+        .ratio-mix-group h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .ratio-input {
+            margin-bottom: 10px;
+        }
+
+        .total-display {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .total-display .valid {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .calculate-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 12px 30px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .calculate-btn:hover {
+            background-color: #f57c00;
+        }
+
+        .calculate-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .calculate-btn:disabled:hover {
+            background-color: #ccc;
+        }
+
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .result-row {
+            display: grid;
+            gap: 30px;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-row.row-1 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .result-row.row-2 {
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+        }
+
+        .result-row.row-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .result-group {
+            margin-bottom: 0;
+        }
+
+        .result-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .result-group .value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-group .percentage {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .product-mix-section {
+            margin-top: 40px;
+        }
+
+        .product-mix-section h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        thead th {
+            background-color: #fff;
+            font-weight: 600;
+            padding: 12px;
+            text-align: left;
+            color: #333;
+            font-size: 14px;
+        }
+
+        thead th:not(:first-child) {
+            text-align: right;
+        }
+
+        tbody tr {
+            background-color: #fff;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody td {
+            padding: 12px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        tbody td:not(:first-child) {
+            text-align: right;
+        }
+
+        .descriptive-text {
+            margin: 25px 0;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .footnote {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .recommended-products-table thead th:nth-child(4) {
+            text-align: right;
+        }
+
+        .recommended-products-table tbody td:nth-child(4) {
+            text-align: right;
+        }
+
+        .table-select, .table-input {
+            width: 100%;
+            min-width: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .binder-achievement-table thead th {
+            background-color: #fff;
+            font-weight: 600;
+            padding: 12px;
+            text-align: left;
+            color: #333;
+            font-size: 14px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .binder-achievement-table tbody td {
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #333;
+            vertical-align: middle;
+        }
+
+        .add-more-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid #ff9800;
+            background: #fff;
+            color: #ff9800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .add-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .cell-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .row-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .product-row-error {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #dc3545;
+            display: none;
+        }
+
+        .table-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Incentive Calculator</h1>
+
+            {% if maintenance_message %}
+            <div style="background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; padding: 15px; margin: 20px 0; color: #856404;">
+                <strong>Notice:</strong><br>
+                <div style="margin-top: 8px;">{{ maintenance_message }}</div>
+            </div>
+            {% else %}
+            <form method="POST" id="individualProductForm">
+                <fieldset style="border: 0; padding: 0; margin: 0;">
+                <div class="input-section">
+                    <div class="left-column">
+                        <div class="input-group">
+                            <label for="emp_id">Employee ID</label>
+                            <input type="text" id="emp_id" name="emp_id" value="{{ request.form.emp_id or '' }}">
+                        </div>
+                        <div class="input-group">
+                            <label for="desired_earning">Desired Earning</label>
+                            <input type="number" id="desired_earning" name="desired_earning" step="0.01" min="0.01" value="{{ request.form.desired_earning or '' }}">
+                            <div id="desiredEarningError" style="display: none; color: #dc3545; font-size: 12px; margin-top: 5px;"></div>
+                        </div>
+                        {% if capping_value is not none %}
+                        <input type="hidden" id="cappingValue" value="{{ capping_value }}">
+                        {% endif %}
+                    </div>
+
+                    <div class="right-column">
+                        <div class="ratio-mix-group">
+                            <h3>Input Ratio Mix (must total 100%)</h3>
+                            <div class="ratio-input">
+                                <label for="non_par">Non Par (%)</label>
+                                <input type="number" id="non_par" name="non_par" value="{{ request.form.non_par or '' }}" step="0.1" min="0" max="100">
+                            </div>
+                            <div class="ratio-input">
+                                <label for="par">Par (%)</label>
+                                <input type="number" id="par" name="par" value="{{ request.form.par or '' }}" step="0.1" min="0" max="100">
+                            </div>
+                            <div class="ratio-input">
+                                <label for="term">Term (%)</label>
+                                <input type="number" id="term" name="term" value="{{ request.form.term or '' }}" step="0.1" min="0" max="100">
+                            </div>
+                            <div class="total-display">
+                                Current total: <span class="valid" id="totalPercentage">0.0%</span>
+                            </div>
+                            <div id="ratioMixError" style="display: none; color: #dc3545; font-size: 12px; margin-top: 5px;">Your product mix ratio should be 100</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="calculate-btn" id="calculateBtn" type="submit">Calculate</button>
+                </fieldset>
+            </form>
+
+            {% if error_message %}
+            <div style="background-color: #fee; border: 1px solid #fcc; border-radius: 4px; padding: 15px; margin: 20px 0; color: #c33;">
+                <strong>Error:</strong><br>
+                <pre style="white-space: pre-wrap; margin-top: 10px;">{{ error_message }}</pre>
+            </div>
+            {% endif %}
+
+            {% if result %}
+            <div class="results-section">
+                <!-- Row 1: Emp ID, Emp name, Channel -->
+                <div class="result-row row-1">
+                    <div class="result-group">
+                        <label>Employee ID</label>
+                        <div class="value">{{ request.form.emp_id }}</div>
+                    </div>
+                    <div class="result-group">
+                        <label>Employee Name</label>
+                        <div class="value">{{ result.name }}</div>
+                    </div>
+                    <div class="result-group">
+                        <label>Channel</label>
+                        <div class="value">{{ result.channel }}</div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Total target, Total business achievement, % achievement, Deficit -->
+                <div class="result-row row-2">
+                    <div class="result-group">
+                        <label>Total Target</label>
+                        <div class="value">{{ result.total_target }}</div>
+                    </div>
+                    <div class="result-group">
+                        <label>Total Business Achievement</label>
+                        <div class="value">{{ result.total_biz }}</div>
+                    </div>
+                    <div class="result-group">
+                        <label>Achievement</label>
+                        <div class="value">
+                            <span id="resultPercentage">{{ result.achievement }}</span>
+                        </div>
+                    </div>
+                    <div class="result-group">
+                        <label>Deficit</label>
+                        <div class="value">{{ result.deficit }}</div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Desired incentive earned, current incentive earned, remaining amount -->
+                <div class="result-row row-3">
+                    <div class="result-group">
+                        <label>Desired Incentive Earned</label>
+                        <div class="value">{{ request.form.desired_earning }}</div>
+                    </div>
+                    <div class="result-group">
+                        <label>Current Incentive Earned</label>
+                        <div class="value">{{ result.incentive }}</div>
+                    </div>
+                    <div class="result-group">
+                        <label>Remaining Amount</label>
+                        <div class="value">{{ result.remaining_amount }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        {% if result and result.remaining_amount != "Desired amount met already" %}
+        <div class="card product-mix-section">
+            <h2>Product Mix</h2>
+
+            <table class="product-mix-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Current Biz</th>
+                        <th>Current Product Mix</th>
+                        <th>Product Mix After Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in result.product_mix %}
+                    <tr>
+                        {% for cell in row %}
+                        <td>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <p class="descriptive-text">
+                {{ result.hit_100 }}
+            </p>
+
+            <table class="recommended-products-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Ratio</th>
+                        <th>Recommended Product</th>
+                        <th>Recommended Premium</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set recommended_categories = ['Non Par', 'PAR', 'Term'] %}
+                    {% for row in result.below_table %}
+                    <tr>
+                        <td>{{ recommended_categories[loop.index0] if loop.index0 < (recommended_categories|length) else '' }}</td>
+                        {% for cell in row %}
+                        <td>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="performance-section" style="margin-top: 40px;">
+                <h3 style="font-size: 18px; margin-bottom: 20px; color: #333; font-weight: 600;">Performance on other Parameters</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    {% for param in result.performance_params %}
+                    <div class="result-group">
+                        <label>{{ param.label }}</label>
+                        <div class="value">{{ param.value }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <p class="footnote">
+                <span style="font-style: italic;">Please note-</span><br>
+                *This is for illustration purpose only<br>
+                Max credits considered for all recommended products<br>
+                For final results, please refer to updates published by BI
+            </p>
+
+        </div>
+
+        <div class="card product-mix-section" id="individual-product-mix">
+            <h2>Individual Product Mix</h2>
+
+            <form method="POST">
+                <input type="hidden" name="emp_id" value="{{ request.form.emp_id or '' }}">
+                <input type="hidden" name="desired_earning" value="{{ request.form.desired_earning or '' }}">
+                <input type="hidden" name="non_par" value="{{ request.form.non_par or '' }}">
+                <input type="hidden" name="par" value="{{ request.form.par or '' }}">
+                <input type="hidden" name="term" value="{{ request.form.term or '' }}">
+                <input type="hidden" name="row_count" id="row_count" value="{{ result.individual_product_row_count or 1 }}">
+
+                <table class="binder-achievement-table individual-product-table">
+                    <thead>
+                        <tr>
+                            {% for header in result.individual_product_headers %}
+                            <th>{{ header }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in result.individual_product_rows %}
+                        {% set i = loop.index %}
+                        <tr>
+                            <td>{{ i }}</td>
+                            <td>
+                                <select name="product_{{ i }}" class="table-select product-select" required>
+                                    <option value="">-- Select --</option>
+                                    <option value="HDFC Life Click 2 Achieve" {% if row.product == 'HDFC Life Click 2 Achieve' %}selected{% endif %}>HDFC Life Click 2 Achieve</option>
+                                    <option value="HDFC Life Sanchay Plus" {% if row.product == 'HDFC Life Sanchay Plus' %}selected{% endif %}>HDFC Life Sanchay Plus</option>
+                                    <option value="HDFC Life Guaranteed Income" {% if row.product == 'HDFC Life Guaranteed Income' %}selected{% endif %}>HDFC Life Guaranteed Income</option>
+                                    <option value="Sanchay Fixed Maturity Pln(SL)" {% if row.product == 'Sanchay Fixed Maturity Pln(SL)' %}selected{% endif %}>Sanchay Fixed Maturity Pln(SL)</option>
+                                    <option value="HDFC Guaranteed Savings Plan" {% if row.product == 'HDFC Guaranteed Savings Plan' %}selected{% endif %}>HDFC Guaranteed Savings Plan</option>
+                                    <option value="HDFC Life GWP_FU" {% if row.product == 'HDFC Life GWP_FU' %}selected{% endif %}>HDFC Life GWP_FU</option>
+                                    <option value="HDFC Guaranteed Pension Plan" {% if row.product == 'HDFC Guaranteed Pension Plan' %}selected{% endif %}>HDFC Guaranteed Pension Plan</option>
+                                    <option value="Click to Achieve Par Advantage" {% if row.product == 'Click to Achieve Par Advantage' %}selected{% endif %}>Click to Achieve Par Advantage</option>
+                                    <option value="HDFCLife Sanchay Par Advantage" {% if row.product == 'HDFCLife Sanchay Par Advantage' %}selected{% endif %}>HDFCLife Sanchay Par Advantage</option>
+                                    <option value="HDFC Life Sampoorna Jeevan" {% if row.product == 'HDFC Life Sampoorna Jeevan' %}selected{% endif %}>HDFC Life Sampoorna Jeevan</option>
+                                    <option value="HDFC Life Assured Gain Plus" {% if row.product == 'HDFC Life Assured Gain Plus' %}selected{% endif %}>HDFC Life Assured Gain Plus</option>
+                                    <option value="HDFC Systematic Pension Plan" {% if row.product == 'HDFC Systematic Pension Plan' %}selected{% endif %}>HDFC Systematic Pension Plan</option>
+                                    <option value="HDFC Life Click2Protect Supreme" {% if row.product == 'HDFC Life Click2Protect Supreme' %}selected{% endif %}>HDFC Life Click2Protect Supreme</option>
+                                </select>
+                            </td>
+                            <td>{% if row.product %}{{ row.variant }}{% endif %}</td>
+                            <td>
+                                <select name="rop_variant_yn_{{ i }}" class="table-select yn-select" required>
+                                    <option value="">-- Select --</option>
+                                    <option value="Y" {% if row.rop_variant_yn == 'Y' %}selected{% endif %}>Y</option>
+                                    <option value="N" {% if row.rop_variant_yn == 'N' %}selected{% endif %}>N</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="cashback_yn_{{ i }}" class="table-select yn-select" required>
+                                    <option value="">-- Select --</option>
+                                    <option value="Y" {% if row.cashback_yn == 'Y' %}selected{% endif %}>Y</option>
+                                    <option value="N" {% if row.cashback_yn == 'N' %}selected{% endif %}>N</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" name="ppt_{{ i }}" class="table-input ppt-input" step="1" min="1" max="30" inputmode="numeric" value="{{ row.ppt or '' }}" required>
+                            </td>
+                            <td>
+                                <input type="number" name="pt_{{ i }}" class="table-input pt-input" step="1" min="1" inputmode="numeric" value="{{ row.pt or '' }}" required>
+                            </td>
+                            <td>
+                                <input type="number" name="epi_{{ i }}" class="table-input" step="0.01" min="0.01" value="{{ row.epi or '' }}" required>
+                            </td>
+                            <td>
+                                <input type="number" name="rider_prem_{{ i }}" class="table-input" step="0.01" min="0.01" value="{{ row.rider_prem or '' }}" required>
+                            </td>
+                            <td>{{ row.incentive_per_product }}</td>
+                            <td>{{ row.total_incentive }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div id="productRowError" class="product-row-error"></div>
+
+                <div class="table-actions">
+                    {% if (result.individual_product_row_count or 1) < 10 %}
+                    <button type="submit" name="action" value="add_row" id="addMoreBtn" class="add-more-btn">Add more products</button>
+                    {% else %}
+                    <button type="button" id="addMoreBtn" class="add-more-btn" disabled>Add more products</button>
+                    {% endif %}
+                </div>
+
+                <p class="footnote">
+                    <span style="font-style: italic;">Please note-</span><br>
+                    *This is for illustration purpose only<br>
+                    Max credits considered for all recommended products<br>
+                    For final results, please refer to updates published by BI
+                </p>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        const MAINTENANCE_MODE = {{ 'true' if maintenance_message else 'false' }};
+
+        // After clicking "Add more products" (POST + full page reload),
+        // keep the user focused on the Individual Product Mix section.
+        (function () {
+            const addMoreBtn = document.getElementById('addMoreBtn');
+            if (addMoreBtn) {
+                addMoreBtn.addEventListener('click', function () {
+                    try { sessionStorage.setItem('scrollTarget', 'individual-product-mix'); } catch (e) {}
+                });
+            }
+
+            function scrollToTargetIfNeeded() {
+                let targetId = null;
+                try { targetId = sessionStorage.getItem('scrollTarget'); } catch (e) {}
+                if (!targetId && window.location.hash) {
+                    targetId = window.location.hash.replace('#', '');
+                }
+                if (!targetId) return;
+
+                const el = document.getElementById(targetId);
+                if (!el) return;
+
+                // Clear the flag so normal reloads don't keep scrolling.
+                try { sessionStorage.removeItem('scrollTarget'); } catch (e) {}
+
+                // Slight delay ensures layout is ready (tables can affect height).
+                setTimeout(() => {
+                    try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { el.scrollIntoView(true); }
+                }, 50);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scrollToTargetIfNeeded);
+            } else {
+                scrollToTargetIfNeeded();
+            }
+        })();
+
+        // Update total percentage when ratio inputs change
+        const ratioInputs = ['non_par', 'par', 'term'];
+        ratioInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', validateForm);
+            }
+        });
+
+        // Add event listener for desired earning input
+        const desiredEarningInput = document.getElementById('desired_earning');
+        if (desiredEarningInput) {
+            desiredEarningInput.addEventListener('input', validateForm);
+        }
+
+        function validateForm() {
+            if (MAINTENANCE_MODE) {
+                const calculateBtn = document.getElementById('calculateBtn');
+                if (calculateBtn) calculateBtn.disabled = true;
+                return;
+            }
+
+            const nonParEl = document.getElementById('non_par');
+            const parEl = document.getElementById('par');
+            const termEl = document.getElementById('term');
+            const desiredEarningEl = document.getElementById('desired_earning');
+            const totalElement = document.getElementById('totalPercentage');
+            const calculateBtn = document.getElementById('calculateBtn');
+            if (!nonParEl || !parEl || !termEl || !desiredEarningEl || !totalElement || !calculateBtn) {
+                return;
+            }
+
+            // Check ratio total
+            const nonPar = parseFloat(nonParEl.value) || 0;
+            const par = parseFloat(parEl.value) || 0;
+            const term = parseFloat(termEl.value) || 0;
+            const total = nonPar + par + term;
+
+            const desiredEarning = parseFloat(desiredEarningEl.value) || 0;
+            const cappingInput = document.getElementById('cappingValue');
+            const capping = cappingInput ? parseFloat(cappingInput.value) : null;
+            const errorElement = document.getElementById('desiredEarningError');
+            const ratioMixErrorElement = document.getElementById('ratioMixError');
+            
+            // Update ratio total display
+            totalElement.textContent = total.toFixed(1) + '%';
+
+            // Validate ratio total
+            const ratioValid = total === 100;
+            if (ratioValid) {
+                totalElement.className = 'valid';
+                totalElement.style.color = '#28a745';
+                if (ratioMixErrorElement) {
+                    ratioMixErrorElement.style.display = 'none';
+                }
+            } else {
+                totalElement.style.color = '#dc3545';
+                if (ratioMixErrorElement) {
+                    ratioMixErrorElement.style.display = 'block';
+                }
+            }
+
+            // Validate desired earning
+            let earningValid = true;
+            const desiredEarningValue = desiredEarningEl.value;
+            
+            // Check if desired earning is empty or <= 0
+            if (!desiredEarningValue || desiredEarning <= 0) {
+                earningValid = false;
+                if (errorElement) {
+                    errorElement.textContent = 'You must enter an amount greater than 0';
+                    errorElement.style.display = 'block';
+                }
+            } else if (capping !== null && capping > 0) {
+                // Check if desired earning exceeds capping
+                if (desiredEarning > capping) {
+                    earningValid = false;
+                    if (errorElement) {
+                        errorElement.textContent = 'Your desired earning cannot be more than the capping';
+                        errorElement.style.display = 'block';
+                    }
+                } else {
+                    if (errorElement) {
+                        errorElement.style.display = 'none';
+                    }
+                }
+            } else {
+                // No capping available yet, but earning is valid (> 0)
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                }
+            }
+
+            // Enable button only if both conditions are met
+            if (ratioValid && earningValid) {
+                calculateBtn.disabled = false;
+            } else {
+                calculateBtn.disabled = true;
+            }
+        }
+
+        // Initialize validation on page load
+        validateForm();
+
+        // Validate Individual Product Mix rows (disable Add more products)
+        function isWholeNumberString(v) {
+            if (v === null || v === undefined) return false;
+            const s = String(v).trim();
+            if (!s) return false;
+            if (s.includes('.')) return false;
+            const n = Number(s);
+            return Number.isFinite(n) && Number.isInteger(n);
+        }
+
+        function validateIndividualProductMix() {
+            const addBtn = document.getElementById('addMoreBtn');
+            const rowCountEl = document.getElementById('row_count');
+            const errEl = document.getElementById('productRowError');
+            if (!rowCountEl) return;
+
+            const rowCount = Math.max(1, Math.min(10, parseInt(rowCountEl.value || '1', 10)));
+            let valid = true;
+            let message = '';
+
+            if (rowCount >= 10) {
+                // Still allow submit for recalculation? Spec says limit to 10, so disable further add.
+                if (addBtn) addBtn.disabled = true;
+                if (errEl) {
+                    errEl.style.display = 'none';
+                    errEl.textContent = '';
+                }
+                return;
+            }
+
+            for (let i = 1; i <= rowCount; i++) {
+                const product = document.querySelector(`[name="product_${i}"]`);
+                const rop = document.querySelector(`[name="rop_variant_yn_${i}"]`);
+                const cash = document.querySelector(`[name="cashback_yn_${i}"]`);
+                const ppt = document.querySelector(`[name="ppt_${i}"]`);
+                const pt = document.querySelector(`[name="pt_${i}"]`);
+                const epi = document.querySelector(`[name="epi_${i}"]`);
+                const rider = document.querySelector(`[name="rider_prem_${i}"]`);
+
+                if (!product || !rop || !cash || !ppt || !pt || !epi || !rider) continue;
+
+                // Required checks
+                if (!product.value || !rop.value || !cash.value || !ppt.value || !pt.value || !epi.value || !rider.value) {
+                    valid = false;
+                }
+
+                // PPT/PT whole numbers
+                // Show messages ONLY when user entered an invalid PPT/PT value (not when empty / new row added)
+                if (ppt.value && !isWholeNumberString(ppt.value)) {
+                    valid = false;
+                    message = 'Please enter the correct PPT';
+                    ppt.setCustomValidity(message);
+                } else {
+                    ppt.setCustomValidity('');
+                }
+                if (pt.value && !isWholeNumberString(pt.value)) {
+                    valid = false;
+                    message = 'PT must be a whole number';
+                    pt.setCustomValidity(message);
+                } else {
+                    pt.setCustomValidity('');
+                }
+
+                // PPT cannot be greater than 30 (do not accept > 30)
+                if (isWholeNumberString(ppt.value)) {
+                    const pptN = parseInt(ppt.value, 10);
+                    if (pptN > 30) {
+                        // clear and show message
+                        ppt.value = '';
+                        valid = false;
+                        message = 'Please enter the correct PPT';
+                        ppt.setCustomValidity(message);
+                    }
+                    if (pptN <= 0) {
+                        ppt.value = '';
+                        valid = false;
+                        message = 'Please enter the correct PPT';
+                        ppt.setCustomValidity(message);
+                    }
+                }
+
+                // PT >= PPT
+                if (isWholeNumberString(ppt.value) && isWholeNumberString(pt.value)) {
+                    const pptN = parseInt(ppt.value, 10);
+                    const ptN = parseInt(pt.value, 10);
+                    if (ptN < pptN) {
+                        valid = false;
+                        // Do NOT clear while typing; only block Add button.
+                        // We'll clear + show message on blur/submit.
+                        pt.setCustomValidity('PT cannot be less than PPT');
+                    }
+                    if (ptN <= 0) {
+                        pt.value = '';
+                        valid = false;
+                        message = 'PT must be greater than 0';
+                        pt.setCustomValidity(message);
+                    }
+                }
+
+                if (!valid && !message) {
+                    // Don't show messages for empty required fields; only for PPT/PT invalid entry
+                    message = '';
+                }
+                if (!valid) break;
+            }
+
+            if (addBtn) addBtn.disabled = !valid;
+            if (errEl) {
+                if (!valid && message) {
+                    errEl.textContent = message;
+                    errEl.style.display = 'block';
+                } else {
+                    errEl.style.display = 'none';
+                    errEl.textContent = '';
+                }
+            }
+        }
+
+        document.addEventListener('input', validateIndividualProductMix);
+        validateIndividualProductMix();
+
+        function enforcePptPtOnRow(i, showMessage) {
+            const errEl = document.getElementById('productRowError');
+            const ppt = document.querySelector(`[name="ppt_${i}"]`);
+            const pt = document.querySelector(`[name="pt_${i}"]`);
+            if (!ppt || !pt) return true;
+
+            // Clear message by default (only when explicitly showing)
+            if (showMessage && errEl) {
+                errEl.style.display = 'none';
+                errEl.textContent = '';
+            }
+
+            // Enforce PPT > 0 and <= 30
+            if (ppt.value && isWholeNumberString(ppt.value)) {
+                const pptN = parseInt(ppt.value, 10);
+                if (pptN > 30 || pptN <= 0) {
+                    ppt.value = '';
+                    ppt.setCustomValidity('Please enter the correct PPT');
+                    if (showMessage && errEl) {
+                        errEl.textContent = 'Please enter the correct PPT';
+                        errEl.style.display = 'block';
+                    }
+                    return false;
+                }
+            }
+
+            // Enforce PT >= PPT only when both present and whole numbers
+            if (ppt.value && pt.value && isWholeNumberString(ppt.value) && isWholeNumberString(pt.value)) {
+                const pptN = parseInt(ppt.value, 10);
+                const ptN = parseInt(pt.value, 10);
+                if (ptN < pptN) {
+                    pt.value = '';
+                    pt.setCustomValidity('PT cannot be less than PPT');
+                    if (showMessage && errEl) {
+                        errEl.textContent = 'PT cannot be less than PPT';
+                        errEl.style.display = 'block';
+                    }
+                    return false;
+                }
+            }
+
+            // Clear validity if okay
+            pt.setCustomValidity('');
+            ppt.setCustomValidity('');
+            return true;
+        }
+
+        // On blur, enforce PT>=PPT and clear PT if needed (no messages on add-row render)
+        document.addEventListener('blur', function(e) {
+            if (!(e.target instanceof HTMLElement)) return;
+            if (!e.target.matches('.ppt-input, .pt-input')) return;
+            const rowCountEl = document.getElementById('row_count');
+            const rowCount = rowCountEl ? Math.max(1, Math.min(10, parseInt(rowCountEl.value || '1', 10))) : 1;
+            // Find row index from input name like ppt_2 / pt_2
+            const name = e.target.getAttribute('name') || '';
+            const m = name.match(/_(\d+)$/);
+            if (!m) return;
+            const i = parseInt(m[1], 10);
+            if (i >= 1 && i <= rowCount) {
+                const ok = enforcePptPtOnRow(i, true);
+                // If we just cleared PT/PPT and showed a message, don't immediately overwrite it.
+                if (ok) {
+                    validateIndividualProductMix();
+                }
+            }
+        }, true);
+
+        // On submit (Add more products), enforce all rows and block submit if invalid
+        const ipForm = document.getElementById('individualProductForm');
+        if (ipForm) {
+            ipForm.addEventListener('submit', function(e) {
+                const rowCountEl = document.getElementById('row_count');
+                const rowCount = rowCountEl ? Math.max(1, Math.min(10, parseInt(rowCountEl.value || '1', 10))) : 1;
+                for (let i = 1; i <= rowCount; i++) {
+                    const ok = enforcePptPtOnRow(i, true);
+                    if (!ok) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
