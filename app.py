@@ -122,6 +122,13 @@ class ExcelWorker:
         self.excel = None
         self.wb = None
         self.sheet = None
+        # Track file signature so we can reload Excel when the workbook changes on disk.
+        # This fixes: "I edited the .xlsb but the app still uses the old workbook instance".
+        self._file_sig: tuple[int, int] | None = None  # (mtime_ns, size)
+
+    def _get_file_sig(self) -> tuple[int, int]:
+        st = os.stat(self.excel_file)
+        return (int(getattr(st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000))), int(st.st_size))
 
     def start(self):
         with self._start_lock:
@@ -192,13 +199,28 @@ class ExcelWorker:
         self.sheet = None
         self.wb = None
         self.excel = None
+        self._file_sig = None
 
     def _restart_excel(self):
         self._shutdown_excel()
-        self._ensure_open()
+        # Don't re-check signature during the reopen to avoid recursion.
+        self._ensure_open(check_for_updates=False)
 
-    def _ensure_open(self):
+    def _ensure_open(self, *, check_for_updates: bool = True):
+        # If we already have an open workbook, optionally reload it if the file on disk changed.
         if self.excel is not None and self.wb is not None and self.sheet is not None:
+            if check_for_updates:
+                try:
+                    current_sig = self._get_file_sig()
+                    if self._file_sig is not None and current_sig != self._file_sig:
+                        # Workbook replaced/updated on disk -> reopen Excel to pick up changes.
+                        self._restart_excel()
+                    else:
+                        # First time tracking signature after open
+                        self._file_sig = current_sig
+                except Exception:
+                    # If stat fails mid-replace, we'll naturally fail on open next call.
+                    pass
             return
 
         if not os.path.exists(self.excel_file):
@@ -263,6 +285,11 @@ class ExcelWorker:
                         pass
 
         self.sheet = _com_retry(lambda: self.wb.Sheets(self.sheet_name))
+        # Capture signature of the workbook we just opened
+        try:
+            self._file_sig = self._get_file_sig()
+        except Exception:
+            self._file_sig = None
 
     def _wait_for_calc_done(self, timeout_s: float = 30.0):
         # Excel.CalculationState: 0=xlDone, 1=xlCalculating, 2=xlPending
@@ -321,6 +348,7 @@ def _com_retry(fn, retries: int = 20, delay_s: float = 0.15):
 
 def read_excel(
     emp_id,
+    doj,
     desired_earning,
     non_par,
     par,
@@ -331,12 +359,14 @@ def read_excel(
     clear_new_rows_from=None,
 ):
     def _calculate_once():
-        excel_worker._ensure_open()
+        # Ensure workbook is open AND reload it if the file changed on disk.
+        excel_worker._ensure_open(check_for_updates=True)
         sheet = excel_worker.sheet
 
         # IMPORTANT: workbook is kept open between requests, so clear prior inputs.
         # Only clear INPUT columns (do NOT clear P/W/X which may contain formulas).
         try:
+            _com_retry(lambda: sheet.Range("J4").ClearContents())
             _com_retry(lambda: sheet.Range("O5:O14").ClearContents())
             _com_retry(lambda: sheet.Range("Q5:V14").ClearContents())
         except Exception:
@@ -345,6 +375,7 @@ def read_excel(
         # ---------- INPUT ----------
         sheet.Range("D5").Value = emp_id
         sheet.Range("D7").Value = desired_earning
+        sheet.Range("J4").Value = (str(doj).strip() if doj is not None else "")
 
         # Convert percentage inputs to decimal format for Excel (30 -> 0.30 for 30%)
         non_par_decimal = float(non_par) / 100 if non_par else 0
@@ -419,6 +450,10 @@ def read_excel(
             "incentive": sheet.Range("I14").Text,
             "remaining_amount": sheet.Range("I15").Text,
             "capping": h7_value,  # H7 value for validation
+            # One-line banner label (requested: pick from C4)
+            "sell_one_line": sheet.Range("C4").Text,
+            # Date-of-Joining validation flag (requested: read from K4)
+            "doj_flag": sheet.Range("K4").Text,
         }
 
         # ---------- OUTPUT (Product mix table C11:F15) ----------
@@ -565,6 +600,7 @@ def index():
     
     if request.method == "POST":
         emp_id = request.form.get("emp_id")
+        doj = request.form.get("doj")
         desired_earning = request.form.get("desired_earning")
         non_par = request.form.get("non_par")
         par = request.form.get("par")
@@ -649,6 +685,7 @@ def index():
         try:
             result = read_excel(
                 emp_id,
+                doj,
                 desired_earning,
                 non_par,
                 par,
@@ -664,22 +701,32 @@ def index():
             except Exception:
                 capping_value = None
 
+            # If DOJ is invalid (requested: K4 reads F), do NOT show results.
+            # If DOJ is valid (K4 reads T), allow results.
+            doj_flag_raw = result.get("doj_flag")
+            doj_flag = str(doj_flag_raw or "").strip().upper()
+            doj_true = ("T", "TRUE", "1", "YES", "Y")
+            if doj_flag not in doj_true:
+                result = None
+                error_message = "Enter correct Date of Joining"
+
             # If desired earning is above capping on the first attempt, do NOT show results.
             # Instead, ask user to adjust desired earning and re-submit.
-            try:
-                desired_val = float(desired_earning) if desired_earning not in (None, "") else None
-            except Exception:
-                desired_val = None
-            if (
-                desired_val is not None
-                and capping_value is not None
-                and capping_value > 0
-                and desired_val > capping_value
-            ):
-                # Keep the page "clean": no results shown, and JS will show inline message +
-                # disable Calculate until corrected.
-                result = None
-                error_message = None
+            if result is not None:
+                try:
+                    desired_val = float(desired_earning) if desired_earning not in (None, "") else None
+                except Exception:
+                    desired_val = None
+                if (
+                    desired_val is not None
+                    and capping_value is not None
+                    and capping_value > 0
+                    and desired_val > capping_value
+                ):
+                    # Keep the page "clean": no results shown, and JS will show inline message +
+                    # disable Calculate until corrected.
+                    result = None
+                    error_message = None
         except Exception as e:
             # If Excel is unavailable (common during workbook updates), show maintenance message.
             if _should_show_maintenance_for_excel_error(e):
